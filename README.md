@@ -28,10 +28,11 @@ It does not include analytics, telemetry, remote fonts, CDNs, or cloud APIs.
 Preferences are stored in browser local storage. Exported files contain the
 document content by design.
 
-If you use a hosted demo, loading the page itself is an internet request to the
-host. For strict offline use, download
-`dist/mermaid-markdown-local.html`, disconnect if required, and open the file
-locally.
+Downloading the HTML from GitHub requires a connection to GitHub. After the
+download, opening the HTML as a local file does not cause this application to
+send the document you are editing to an external service. For strict offline
+use, disconnect if required and open `dist/mermaid-markdown-local.html` as a
+local file.
 
 ## Use
 
