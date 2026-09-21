@@ -1,0 +1,33 @@
+{
+  "name": "mermaid-markdown-local",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A single-file, offline-first Markdown editor with Mermaid and document export.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/soda-mikan/mermaid-markdown-local.git"
+  },
+  "homepage": "https://github.com/soda-mikan/mermaid-markdown-local#readme",
+  "bugs": {
+    "url": "https://github.com/soda-mikan/mermaid-markdown-local/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --check src/app.js && node --test tests/*.test.mjs",
+    "verify": "npm run build && npm test"
+  },
+  "dependencies": {
+    "docx": "9.6.1",
+    "jszip": "3.10.1",
+    "marked": "17.0.5",
+    "mermaid": "11.17.2",
+    "pptxgenjs": "4.0.1"
+  },
+  "overrides": {
+    "image-size": "2.0.4"
+  }
+}

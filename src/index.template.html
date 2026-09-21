@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; media-src 'none'; form-action 'none'; base-uri 'none'; worker-src blob:">
+  <title>Mermaid Markdown — ローカルエディタ</title>
+  <style>
+/*__APP_CSS__*/
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="toolbar" aria-label="ファイルと書き出し">
+      <div class="brand">Mermaid Markdown</div>
+      <button type="button" id="openButton" title="Markdownファイルを開く（Ctrl/⌘+O）">開く</button>
+      <button type="button" id="saveButton" title="開いているMarkdownを上書き保存（Ctrl/⌘+S）">上書き保存</button>
+      <input id="fileInput" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+      <span class="filename" id="filename">untitled.md</span>
+      <span class="separator" aria-hidden="true"></span>
+      <button type="button" class="export-button" id="pdfButton" title="ブラウザの印刷画面からPDFへ保存">PDF</button>
+      <button type="button" class="export-button" id="pngButton" title="プレビュー全体をPNG画像として保存">PNG</button>
+      <button type="button" class="export-button" id="wordButton" title="編集可能なWord文書として保存。MermaidはSVGで埋め込みます">Word</button>
+      <button type="button" class="export-button" id="pptxButton" title="--- で分割した編集可能なPowerPoint。MermaidはSVGで埋め込みます">PowerPoint</button>
+      <button type="button" id="viewModeButton" aria-pressed="false" aria-controls="workspace" title="Viewerを全幅で表示">Viewerのみ</button>
+      <div class="spacer"></div>
+      <span class="privacy-state" title="このHTMLは外部通信機能を持ちません"><span class="privacy-dot"></span>ローカルのみ</span>
+      <button type="button" id="helpButton" aria-expanded="false" aria-controls="helpPanel" title="チートシートを表示（F1）">ヘルプ</button>
+    </header>
+
+    <section class="workspace" id="workspace" aria-label="Markdown編集画面">
+      <section class="pane" aria-label="エディタ">
+        <div class="pane-label"><span>Editor</span><span id="editorStats">0文字</span></div>
+        <textarea id="editor" spellcheck="false" autocomplete="off" aria-label="Markdownエディタ"></textarea>
+      </section>
+      <section class="pane" aria-label="プレビュー">
+        <div class="pane-label"><span>Viewer</span><span id="renderState">準備完了</span></div>
+        <div class="preview-scroll" id="previewScroll">
+          <article class="preview-content" id="preview" aria-live="polite"></article>
+        </div>
+      </section>
+    </section>
+
+    <section class="help-panel" id="helpPanel" aria-label="MarkdownとMermaidのチートシート">
+      <div class="help-inner">
+        <section class="appearance-settings" aria-labelledby="appearanceTitle">
+          <div class="settings-intro">
+            <h2 id="appearanceTitle">表示・書き出し</h2>
+            <p>選択はこの端末内だけに保存されます。本文フォントとMermaid配色は書き出しにも反映されます。</p>
+          </div>
+          <div class="settings-controls">
+            <label class="setting-control" for="fontSelect">
+              <span>本文フォント</span>
+              <select id="fontSelect">
+                <option value="gothic">ゴシック</option>
+                <option value="mincho">明朝</option>
+                <option value="system">OS標準</option>
+                <option value="monospace">等幅</option>
+              </select>
+            </label>
+            <label class="setting-control" for="colorSelect">
+              <span>Viewer・画面の配色</span>
+              <select id="colorSelect">
+                <option value="monochrome">黒・白・シルバー</option>
+                <option value="quiet-light">Quiet Light</option>
+                <option value="dark">ダーク</option>
+                <option value="paper">紙面</option>
+              </select>
+            </label>
+            <label class="setting-control" for="mermaidPaletteSelect">
+              <span>Mermaid配色</span>
+              <select id="mermaidPaletteSelect">
+                <option value="colorful">カラフル</option>
+                <option value="cool">クール</option>
+                <option value="warm">ウォーム</option>
+                <option value="quiet-light">Quiet Light</option>
+                <option value="monochrome">モノクロ</option>
+              </select>
+            </label>
+            <button type="button" id="resetAppearanceButton">初期設定に戻す</button>
+          </div>
+        </section>
+        <section>
+          <h2>Markdown</h2>
+          <pre># 見出し1
+## 見出し2
+
+**太字**  *斜体*
+
+- 箇条書き
+1. 番号付き
+
+&gt; 引用
+
+`インラインコード`</pre>
+        </section>
+        <section>
+          <h3>表・リンク・画像</h3>
+          <pre>| 項目 | 内容 |
+| --- | --- |
+| A   | 説明 |
+
+[リンク](https://example.com)
+![代替文](data:image/...)
+
+外部リンク・外部画像は
+安全のため開きません。</pre>
+        </section>
+        <section>
+          <h3>Mermaid</h3>
+          <pre>```mermaid
+flowchart LR
+  A[入力] --&gt; B{確認}
+  B --&gt;|OK| C[出力]
+  B --&gt;|修正| A
+```
+
+sequenceDiagram
+  Alice-&gt;&gt;Bob: Hello</pre>
+        </section>
+        <section>
+          <h3>PowerPoint・操作</h3>
+          <pre>---
+行に --- だけを書くと
+PowerPointのスライド区切り。
+
+コードブロック内の --- と
+先頭のYAMLは分割しません。
+
+Ctrl/⌘ + O  開く
+Ctrl/⌘ + S  保存
+F1          ヘルプ</pre>
+          <p>「Viewerのみ」でプレビューを全幅表示できます。WordとPowerPointでは本文を編集でき、Mermaid図は鮮明なSVGとして埋め込みます。</p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="status-toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="capture-root" id="captureRoot" aria-hidden="true"></div>
+
+  <script>
+/*__MARKED_JS__*/
+  </script>
+  <script>
+/*__MERMAID_JS__*/
+  </script>
+  <script>
+/*__JSZIP_JS__*/
+  </script>
+  <script>
+/*__DOCX_JS__*/
+  </script>
+  <script>
+/*__PPTX_JS__*/
+  </script>
+  <script>
+/*__APP_JS__*/
+  </script>
+</body>
+</html>
