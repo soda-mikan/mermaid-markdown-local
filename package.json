@@ -1,6 +1,6 @@
 {
   "name": "mermaid-markdown-local",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A single-file, offline-first Markdown editor with Mermaid and document export.",
   "repository": {

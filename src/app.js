@@ -59,7 +59,12 @@
   const exportButtons = Array.from(document.querySelectorAll(".export-button"));
   const fontSelect = document.getElementById("fontSelect");
   const colorSelect = document.getElementById("colorSelect");
+  const textSizeSelect = document.getElementById("textSizeSelect");
   const mermaidPaletteSelect = document.getElementById("mermaidPaletteSelect");
+  const wordTemplateButton = document.getElementById("wordTemplateButton");
+  const clearWordTemplateButton = document.getElementById("clearWordTemplateButton");
+  const wordTemplateInput = document.getElementById("wordTemplateInput");
+  const wordTemplateStatus = document.getElementById("wordTemplateStatus");
   const resetAppearanceButton = document.getElementById("resetAppearanceButton");
 
   let fileName = "untitled.md";
@@ -70,9 +75,16 @@
   let toastTimer = 0;
   let mermaidSequence = 0;
   let busy = false;
+  let wordTemplate = null;
 
   const APPEARANCE_STORAGE_KEY = "mermaid-markdown-local.appearance.v1";
-  const APPEARANCE_DEFAULTS = { font: "gothic", color: "monochrome", mermaid: "colorful", viewerOnly: false };
+  const APPEARANCE_DEFAULTS = { font: "gothic", color: "monochrome", textSize: "standard", mermaid: "colorful", viewerOnly: false };
+  const TEXT_SIZE_PRESETS = {
+    small: { content: "14px", editor: "13px", mermaid: "14px", scale: 0.875 },
+    standard: { content: "16px", editor: "14px", mermaid: "16px", scale: 1 },
+    large: { content: "18px", editor: "16px", mermaid: "18px", scale: 1.125 },
+    xlarge: { content: "20px", editor: "18px", mermaid: "20px", scale: 1.25 },
+  };
   const FONT_PRESETS = {
     gothic: {
       css: 'Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif',
@@ -131,14 +143,15 @@
     },
     "quiet-light": {
       background: "#f5f5f5",
-      line: "#777777",
-      note: { fill: "#c4d9b1", border: "#749351", text: "#333333" },
+      line: "#2f7ea1",
+      edgeLabel: { fill: "#f5f5f5", text: "#555555" },
+      note: { fill: "#f5f5f5", border: "#2f7ea1", text: "#555555" },
       nodes: [
-        { fill: "#4b69c6", border: "#354b91", text: "#ffffff" },
-        { fill: "#7a3e9d", border: "#59306f", text: "#ffffff" },
-        { fill: "#448c27", border: "#32681d", text: "#ffffff" },
-        { fill: "#aa3731", border: "#7f2925", text: "#ffffff" },
-        { fill: "#9c5d27", border: "#74451d", text: "#ffffff" },
+        { fill: "#f5f5f5", border: "#2f7ea1", text: "#555555" },
+        { fill: "#f5f5f5", border: "#2f7ea1", text: "#555555" },
+        { fill: "#f5f5f5", border: "#2f7ea1", text: "#555555" },
+        { fill: "#f5f5f5", border: "#2f7ea1", text: "#555555" },
+        { fill: "#f5f5f5", border: "#2f7ea1", text: "#555555" },
       ],
     },
     monochrome: {
@@ -160,6 +173,7 @@
       return {
         font: Object.prototype.hasOwnProperty.call(FONT_PRESETS, stored.font) ? stored.font : APPEARANCE_DEFAULTS.font,
         color: ["monochrome", "quiet-light", "dark", "paper"].includes(stored.color) ? stored.color : APPEARANCE_DEFAULTS.color,
+        textSize: Object.prototype.hasOwnProperty.call(TEXT_SIZE_PRESETS, stored.textSize) ? stored.textSize : APPEARANCE_DEFAULTS.textSize,
         mermaid: Object.prototype.hasOwnProperty.call(MERMAID_PALETTES, stored.mermaid) ? stored.mermaid : APPEARANCE_DEFAULTS.mermaid,
         viewerOnly: stored.viewerOnly === true,
       };
@@ -179,7 +193,7 @@
   });
 
   function mermaidThemeCss(palette) {
-    return palette.nodes.map((node, index) => {
+    const nodeCss = palette.nodes.map((node, index) => {
       const selector = index === 4 ? "5n" : `5n+${index + 1}`;
       return `
         .nodes > .node:nth-child(${selector}) .label-container { fill: ${node.fill} !important; stroke: ${node.border} !important; }
@@ -187,10 +201,16 @@
         .nodes > .node:nth-child(${selector}) text { fill: ${node.text} !important; color: ${node.text} !important; }
       `;
     }).join("\n");
+    const edgeCss = palette.edgeLabel ? `
+      .edgeLabel rect, .edgeLabel .labelBkg { fill: ${palette.edgeLabel.fill} !important; opacity: 1 !important; }
+      .edgeLabel text, .edgeLabel .label { fill: ${palette.edgeLabel.text} !important; color: ${palette.edgeLabel.text} !important; }
+    ` : "";
+    return `${nodeCss}\n${edgeCss}`;
   }
 
   function configureMermaid() {
     const font = FONT_PRESETS[appearance.font];
+    const textSize = TEXT_SIZE_PRESETS[appearance.textSize];
     const palette = MERMAID_PALETTES[appearance.mermaid];
     mermaid.initialize({
       startOnLoad: false,
@@ -213,6 +233,8 @@
         tertiaryTextColor: palette.nodes[2].text,
         lineColor: palette.line,
         textColor: "#111111",
+        fontSize: textSize.mermaid,
+        edgeLabelBackground: palette.edgeLabel ? palette.edgeLabel.fill : palette.background || "#ffffff",
         noteBkgColor: palette.note.fill,
         noteBorderColor: palette.note.border,
         noteTextColor: palette.note.text,
@@ -234,10 +256,14 @@
 
   function applyAppearance({ persist = true, rerender = true, announce = true } = {}) {
     const font = FONT_PRESETS[appearance.font] || FONT_PRESETS[APPEARANCE_DEFAULTS.font];
+    const textSize = TEXT_SIZE_PRESETS[appearance.textSize] || TEXT_SIZE_PRESETS[APPEARANCE_DEFAULTS.textSize];
     document.documentElement.dataset.fontTheme = appearance.font;
     document.documentElement.dataset.colorTheme = appearance.color;
+    document.documentElement.style.setProperty("--content-font-size", textSize.content);
+    document.documentElement.style.setProperty("--editor-font-size", textSize.editor);
     fontSelect.value = appearance.font;
     colorSelect.value = appearance.color;
+    textSizeSelect.value = appearance.textSize;
     mermaidPaletteSelect.value = appearance.mermaid;
     applyViewMode({ persist: false, announce: false });
     EXPORT_FONT = font.export;
@@ -246,6 +272,10 @@
     if (persist) storeAppearance();
     if (rerender) scheduleRender();
     if (announce) showToast("表示設定を変更しました");
+  }
+
+  function currentTextScale() {
+    return (TEXT_SIZE_PRESETS[appearance.textSize] || TEXT_SIZE_PRESETS.standard).scale;
   }
 
   applyAppearance({ persist: false, rerender: false, announce: false });
@@ -261,6 +291,8 @@
     busy = value;
     exportButtons.forEach((button) => { button.disabled = value; });
     document.getElementById("openButton").disabled = value;
+    wordTemplateButton.disabled = value;
+    clearWordTemplateButton.disabled = value || !wordTemplate;
     if (message) {
       renderState.textContent = message;
     }
@@ -501,6 +533,113 @@
     }
   }
 
+  function updateWordTemplateUi() {
+    if (wordTemplate) {
+      wordTemplateStatus.textContent = wordTemplate.name;
+      wordTemplateStatus.title = wordTemplate.name;
+      clearWordTemplateButton.disabled = busy;
+      document.getElementById("wordButton").title = `${wordTemplate.name} の {{CONTENT}} に本文を差し込んで保存`;
+    } else {
+      wordTemplateStatus.textContent = "未選択";
+      wordTemplateStatus.removeAttribute("title");
+      clearWordTemplateButton.disabled = true;
+      document.getElementById("wordButton").title = "編集可能なWord文書として保存。MermaidはSVGで埋め込みます";
+    }
+  }
+
+  function parseWordXml(xml, label) {
+    const parsed = new DOMParser().parseFromString(xml, "application/xml");
+    if (parsed.querySelector("parsererror")) throw new Error(`${label}を読み取れませんでした。`);
+    return parsed;
+  }
+
+  function documentPlaceholderCount(xml, key) {
+    const wordNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const parsed = parseWordXml(xml, "Word本文");
+    return Array.from(parsed.getElementsByTagNameNS(wordNamespace, "p")).filter((paragraph) => {
+      const text = Array.from(paragraph.getElementsByTagNameNS(wordNamespace, "t"))
+        .map((node) => node.textContent || "")
+        .join("")
+        .trim();
+      return text === `{{${key}}}`;
+    }).length;
+  }
+
+  function hasAutomaticExternalWordField(parsed) {
+    const wordNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const instructions = Array.from(parsed.getElementsByTagNameNS(wordNamespace, "instrText"))
+      .map((node) => node.textContent || "")
+      .join(" ");
+    return /\b(?:INCLUDEPICTURE|INCLUDETEXT|DDE|DDEAUTO|LINK)\b/i.test(instructions);
+  }
+
+  async function validateWordTemplate(file) {
+    if (!file || !/\.docx$/i.test(file.name)) throw new Error(".docx形式のテンプレートを選んでください。");
+    if (file.size > 25 * 1024 * 1024) throw new Error("Wordテンプレートは25MB以下にしてください。");
+
+    const data = new Uint8Array(await file.arrayBuffer());
+    const zip = await JSZip.loadAsync(data);
+    const documentEntry = zip.file("word/document.xml");
+    if (!zip.file("[Content_Types].xml") || !documentEntry) throw new Error("有効なWord文書ではありません。");
+    if (Object.keys(zip.files).some((name) => /vbaProject\.bin$/i.test(name))) {
+      throw new Error("マクロを含むWord文書はテンプレートに使用できません。");
+    }
+
+    for (const [name, entry] of Object.entries(zip.files)) {
+      if (entry.dir || !name.endsWith(".rels")) continue;
+      const relationships = parseWordXml(await entry.async("text"), name);
+      for (const relationship of Array.from(relationships.getElementsByTagName("Relationship"))) {
+        const external = (relationship.getAttribute("TargetMode") || "").toLowerCase() === "external";
+        const type = relationship.getAttribute("Type") || "";
+        if (external && !type.endsWith("/hyperlink")) {
+          throw new Error("外部テンプレートや外部画像を参照するWord文書は使用できません。");
+        }
+      }
+    }
+
+    const documentXml = await documentEntry.async("text");
+    const contentCount = documentPlaceholderCount(documentXml, "CONTENT");
+    if (contentCount !== 1) {
+      throw new Error("テンプレート本文に、単独の段落として {{CONTENT}} を1つ置いてください。");
+    }
+    for (const [name, entry] of Object.entries(zip.files)) {
+      if (entry.dir || !/^word\/.+\.xml$/i.test(name)) continue;
+      const parsed = parseWordXml(await entry.async("text"), name);
+      if (hasAutomaticExternalWordField(parsed)) {
+        throw new Error("外部データを自動取得するフィールドを含むWord文書は使用できません。");
+      }
+      if (name !== "word/document.xml" && (parsed.documentElement.textContent || "").includes("{{CONTENT}}")) {
+        throw new Error("{{CONTENT}} はヘッダーやフッターではなく、テンプレート本文だけに置いてください。");
+      }
+    }
+    const patchKeys = await docx.patchDetector({ data });
+    return {
+      name: file.name,
+      data,
+      hasTitle: patchKeys.includes("TITLE"),
+    };
+  }
+
+  async function loadWordTemplate(file) {
+    if (!file) return;
+    setBusy(true, "テンプレート確認中");
+    try {
+      const nextTemplate = await validateWordTemplate(file);
+      wordTemplate = nextTemplate;
+      updateWordTemplateUi();
+      showToast(`${file.name} をWordテンプレートとして読み込みました`, 4200);
+    } finally {
+      setBusy(false, "描画済み");
+    }
+  }
+
+  function clearWordTemplate() {
+    wordTemplate = null;
+    wordTemplateInput.value = "";
+    updateWordTemplateUi();
+    showToast("Wordテンプレートを解除しました");
+  }
+
   function canvasToBlob(canvas, type = "image/png", quality = 1) {
     return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("画像を生成できませんでした。")), type, quality);
@@ -525,12 +664,21 @@
     }).join("");
   }
 
+  function scaledWordSize(size) {
+    return Math.max(1, Math.round(size * currentTextScale()));
+  }
+
   function inlineWordRuns(tokens, style = {}) {
     const runs = [];
     for (const token of Array.isArray(tokens) ? tokens : []) {
       if (!token) continue;
       if (token.type === "br") {
-        runs.push(new docx.TextRun({ text: "", break: 1, font: EXPORT_FONT, size: style.size || 21 }));
+        runs.push(new docx.TextRun({
+          text: "",
+          break: 1,
+          font: style.templateStyles ? undefined : EXPORT_FONT,
+          size: style.templateStyles ? undefined : scaledWordSize(style.size || 21),
+        }));
         continue;
       }
       if (token.type === "strong" || token.type === "em" || token.type === "del" || token.type === "link") {
@@ -560,8 +708,8 @@
         italics: Boolean(style.italics),
         strike: Boolean(style.strike),
         underline: style.underline ? {} : undefined,
-        font: isCode ? EXPORT_CODE_FONT : EXPORT_FONT,
-        size: style.size || 21,
+        font: style.templateStyles ? undefined : isCode ? EXPORT_CODE_FONT : EXPORT_FONT,
+        size: style.templateStyles ? undefined : scaledWordSize(style.size || 21),
         shading: isCode ? { fill: "EEEEEE" } : undefined,
       }));
     }
@@ -758,9 +906,9 @@
     return lines;
   }
 
-  function canvasBlockMetrics(context, block, contentWidth) {
+  function canvasBlockMetrics(context, block, contentWidth, textScale = 1) {
     if (block.type === "text" || block.type === "code") {
-      const size = block.type === "code" ? 22 : block.fontSize * 1.7;
+      const size = (block.type === "code" ? 22 : block.fontSize * 1.7) * textScale;
       context.font = `${block.bold ? "700 " : ""}${size}px ${block.type === "code" ? EXPORT_CODE_FONT : EXPORT_FONT}, sans-serif`;
       const indent = (block.indent || 0) * 38 + (block.quoteDepth || 0) * 22;
       const lines = wrapCanvasLines(context, block.text, contentWidth - indent - 20);
@@ -773,9 +921,10 @@
       const rows = [block.header, ...block.rows];
       const columns = Math.max(1, block.header.length);
       const cellWidth = contentWidth / columns;
-      context.font = `22px ${EXPORT_FONT}, sans-serif`;
-      const rowHeights = rows.map((row) => Math.max(48, ...row.map((cell) => wrapCanvasLines(context, inlinePlain(cell.tokens), cellWidth - 24).length * 31 + 16)));
-      return { height: rowHeights.reduce((sum, value) => sum + value, 0) + 28, rowHeights, cellWidth };
+      const tableFontSize = 22 * textScale;
+      context.font = `${tableFontSize}px ${EXPORT_FONT}, sans-serif`;
+      const rowHeights = rows.map((row) => Math.max(48 * textScale, ...row.map((cell) => wrapCanvasLines(context, inlinePlain(cell.tokens), cellWidth - 24).length * tableFontSize * 1.4 + 16)));
+      return { height: rowHeights.reduce((sum, value) => sum + value, 0) + 28, rowHeights, cellWidth, tableFontSize };
     }
     return { height: block.type === "hr" ? 34 : 16 };
   }
@@ -787,9 +936,10 @@
       const logicalWidth = 1400;
       const margin = 80;
       const contentWidth = logicalWidth - margin * 2;
+      const textScale = currentTextScale();
       const measureCanvas = document.createElement("canvas");
       const measureContext = measureCanvas.getContext("2d");
-      const metrics = blocks.map((block) => canvasBlockMetrics(measureContext, block, contentWidth));
+      const metrics = blocks.map((block) => canvasBlockMetrics(measureContext, block, contentWidth, textScale));
       const logicalHeight = Math.max(720, margin * 2 + metrics.reduce((sum, item) => sum + item.height, 0));
       const scale = Math.min(1, 15600 / logicalHeight);
       const canvas = document.createElement("canvas");
@@ -829,7 +979,7 @@
         } else if (block.type === "table") {
           const rows = [block.header, ...block.rows];
           let rowY = y;
-          context.font = `22px ${EXPORT_FONT}, sans-serif`;
+          context.font = `${metric.tableFontSize}px ${EXPORT_FONT}, sans-serif`;
           rows.forEach((row, rowIndex) => {
             const rowHeight = metric.rowHeights[rowIndex];
             row.forEach((cell, columnIndex) => {
@@ -840,7 +990,7 @@
               context.strokeRect(cellX, rowY, metric.cellWidth, rowHeight);
               context.fillStyle = "#111111";
               const lines = wrapCanvasLines(context, inlinePlain(cell.tokens), metric.cellWidth - 24);
-              lines.forEach((line, lineIndex) => context.fillText(line, cellX + 12, rowY + 10 + lineIndex * 31));
+              lines.forEach((line, lineIndex) => context.fillText(line, cellX + 12, rowY + 10 + lineIndex * metric.tableFontSize * 1.4));
             });
             rowY += rowHeight;
           });
@@ -918,7 +1068,7 @@
         const slide = pptx.addSlide();
         slide.background = { color: "FFFFFF" };
         const totalHeight = blocks.reduce((sum, block) => sum + pptBlockHeight(block), 0);
-        const scale = Math.max(0.42, Math.min(1, 6.2 / Math.max(0.1, totalHeight)));
+        const scale = Math.max(0.42, Math.min(currentTextScale(), 6.2 / Math.max(0.1, totalHeight)));
         let y = 0.58;
 
         for (const block of blocks) {
@@ -981,34 +1131,52 @@
     }
   }
 
-  function wordTextParagraph(block) {
+  function wordTextParagraph(block, { templateStyles = false } = {}) {
     const sizes = [34, 29, 25, 23, 22, 21];
     const size = block.heading ? sizes[Math.max(0, Math.min(5, block.heading - 1))] : 21;
-    const prefixRuns = block.prefix ? [new docx.TextRun({ text: block.prefix, font: EXPORT_FONT, size })] : [];
-    const runs = [...prefixRuns, ...inlineWordRuns(block.tokens, { bold: block.bold, size })];
+    const prefixRuns = block.prefix ? [new docx.TextRun({
+      text: block.prefix,
+      font: templateStyles ? undefined : EXPORT_FONT,
+      size: templateStyles ? undefined : scaledWordSize(size),
+    })] : [];
+    const runs = [...prefixRuns, ...inlineWordRuns(block.tokens, { bold: block.bold, size, templateStyles })];
     return new docx.Paragraph({
       heading: block.heading ? [null, docx.HeadingLevel.HEADING_1, docx.HeadingLevel.HEADING_2, docx.HeadingLevel.HEADING_3, docx.HeadingLevel.HEADING_4, docx.HeadingLevel.HEADING_5, docx.HeadingLevel.HEADING_6][block.heading] : undefined,
-      children: runs.length ? runs : [new docx.TextRun({ text: block.text || "", font: EXPORT_FONT, size })],
+      style: templateStyles && block.quoteDepth ? "Quote" : undefined,
+      children: runs.length ? runs : [new docx.TextRun({
+        text: block.text || "",
+        font: templateStyles ? undefined : EXPORT_FONT,
+        size: templateStyles ? undefined : scaledWordSize(size),
+      })],
       indent: (block.indent || block.quoteDepth) ? {
         left: (block.indent || 0) * 360 + (block.quoteDepth || 0) * 300,
         hanging: block.prefix ? 240 : undefined,
       } : undefined,
-      shading: block.quoteDepth ? { fill: "F2F2F2" } : undefined,
-      spacing: { before: block.heading ? 180 : 0, after: block.heading ? 130 : 110, line: 300 },
+      shading: !templateStyles && block.quoteDepth ? { fill: "F2F2F2" } : undefined,
+      spacing: templateStyles ? undefined : { before: block.heading ? 180 : 0, after: block.heading ? 130 : 110, line: 300 },
     });
   }
 
-  async function wordChildren(blocks) {
+  async function wordChildren(blocks, { templateStyles = false } = {}) {
     const children = [];
     for (const block of blocks) {
       if (block.type === "text") {
-        children.push(wordTextParagraph(block));
+        children.push(wordTextParagraph(block, { templateStyles }));
       } else if (block.type === "code") {
         const lines = String(block.text || "").split("\n");
         const runs = [];
         lines.forEach((line, index) => {
-          if (index) runs.push(new docx.TextRun({ text: "", break: 1, font: EXPORT_CODE_FONT, size: 18 }));
-          runs.push(new docx.TextRun({ text: line || " ", font: EXPORT_CODE_FONT, size: 18 }));
+          if (index) runs.push(new docx.TextRun({
+            text: "",
+            break: 1,
+            font: templateStyles ? undefined : EXPORT_CODE_FONT,
+            size: templateStyles ? undefined : scaledWordSize(18),
+          }));
+          runs.push(new docx.TextRun({
+            text: line || " ",
+            font: templateStyles ? undefined : EXPORT_CODE_FONT,
+            size: templateStyles ? undefined : scaledWordSize(18),
+          }));
         });
         children.push(new docx.Paragraph({
           children: runs,
@@ -1020,13 +1188,14 @@
         children.push(new docx.Paragraph({ thematicBreak: true, spacing: { before: 100, after: 100 } }));
       } else if (block.type === "table") {
         const makeCell = (cell, header) => new docx.TableCell({
-          shading: header ? { fill: "E5E5E5" } : undefined,
+          shading: !templateStyles && header ? { fill: "E5E5E5" } : undefined,
           children: [new docx.Paragraph({
-            children: inlineWordRuns(cell.tokens, { bold: header, size: 19 }),
-            spacing: { before: 40, after: 40 },
+            children: inlineWordRuns(cell.tokens, { bold: header, size: 19, templateStyles }),
+            spacing: templateStyles ? undefined : { before: 40, after: 40 },
           })],
         });
         children.push(new docx.Table({
+          style: templateStyles ? "TableGrid" : undefined,
           width: { size: 100, type: docx.WidthType.PERCENTAGE },
           rows: [
             new docx.TableRow({ children: block.header.map((cell) => makeCell(cell, true)) }),
@@ -1062,7 +1231,28 @@
     setBusy(true, "Word生成中");
     try {
       const blocks = await markdownBlocks(editor.value);
-      const children = await wordChildren(blocks);
+      const children = await wordChildren(blocks, { templateStyles: Boolean(wordTemplate) });
+      if (wordTemplate) {
+        const patches = {
+          CONTENT: { type: docx.PatchType.DOCUMENT, children },
+        };
+        if (wordTemplate.hasTitle) {
+          patches.TITLE = {
+            type: docx.PatchType.PARAGRAPH,
+            children: [new docx.TextRun({ text: safeBaseName(fileName) })],
+          };
+        }
+        const blob = await docx.patchDocument({
+          outputType: "blob",
+          data: wordTemplate.data,
+          patches,
+          keepOriginalStyles: true,
+          recursive: false,
+        });
+        downloadBlob(blob, `${safeBaseName(fileName)}.docx`);
+        showToast(`${wordTemplate.name} を使ってWordを書き出しました`);
+        return;
+      }
       const documentFile = new docx.Document({
         creator: "Mermaid Markdown (local)",
         title: safeBaseName(fileName),
@@ -1172,6 +1362,10 @@
     appearance.color = colorSelect.value;
     applyAppearance({ rerender: false });
   });
+  textSizeSelect.addEventListener("change", () => {
+    appearance.textSize = textSizeSelect.value;
+    applyAppearance();
+  });
   mermaidPaletteSelect.addEventListener("change", () => {
     appearance.mermaid = mermaidPaletteSelect.value;
     applyAppearance();
@@ -1179,6 +1373,16 @@
   resetAppearanceButton.addEventListener("click", () => {
     appearance = { ...APPEARANCE_DEFAULTS };
     applyAppearance();
+  });
+  wordTemplateButton.addEventListener("click", () => wordTemplateInput.click());
+  clearWordTemplateButton.addEventListener("click", clearWordTemplate);
+  wordTemplateInput.addEventListener("change", () => {
+    const file = wordTemplateInput.files && wordTemplateInput.files[0];
+    loadWordTemplate(file).catch((error) => {
+      console.error(error);
+      showToast(`Wordテンプレートを読み込めません: ${error && error.message ? error.message : String(error)}`, 6500);
+    });
+    wordTemplateInput.value = "";
   });
   fileInput.addEventListener("change", () => {
     openFile(fileInput.files && fileInput.files[0]).catch((error) => showToast(error.message, 5000));
@@ -1227,6 +1431,7 @@
   });
 
   editor.value = SAMPLE;
+  updateWordTemplateUi();
   updateStats();
   renderPreview(++renderRevision).catch((error) => showToast(error.message, 5000));
 })();

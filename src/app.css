@@ -23,6 +23,8 @@
   --font-ui: Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
   --font-content: Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
   --font-code: Consolas, Menlo, Monaco, "Yu Gothic", Meiryo, monospace;
+  --content-font-size: 16px;
+  --editor-font-size: 14px;
   font-family: var(--font-ui);
 }
 
@@ -270,7 +272,7 @@ button:disabled {
   background: var(--editor-bg);
   color: var(--text);
   font-family: var(--font-code);
-  font-size: 14px;
+  font-size: var(--editor-font-size);
   line-height: 1.65;
   tab-size: 2;
 }
@@ -288,7 +290,7 @@ button:disabled {
 .doc-page-content {
   color: var(--text);
   font-family: var(--font-content);
-  font-size: 16px;
+  font-size: var(--content-font-size);
   line-height: 1.72;
 }
 
@@ -561,6 +563,29 @@ button:disabled {
   color: var(--text);
 }
 
+.word-template-control {
+  min-width: 220px;
+}
+
+.word-template-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.word-template-actions button {
+  min-height: 32px;
+}
+
+.word-template-status {
+  max-width: 220px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .help-inner p,
 .help-inner ul {
   margin: 5px 0;
@@ -746,6 +771,9 @@ button:disabled {
   .settings-controls,
   .setting-control,
   .setting-control select,
+  .word-template-control,
+  .word-template-actions,
+  .word-template-actions button,
   #resetAppearanceButton {
     width: 100%;
   }

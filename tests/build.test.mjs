@@ -31,6 +31,11 @@ test("third-party notices travel with the standalone HTML", () => {
 test("requested editor features are present", () => {
   assert.match(html, />Viewerのみ</);
   assert.match(html, />Quiet Light</);
+  assert.match(html, /id="textSizeSelect"/);
+  assert.match(html, /id="wordTemplateInput"/);
+  assert.match(html, /docx\.patchDocument/);
+  assert.match(html, /\{\{CONTENT\}\}/);
+  assert.match(html, /#2f7ea1/i);
   assert.match(html, /showOpenFilePicker/);
   assert.match(html, /showSaveFilePicker/);
 });

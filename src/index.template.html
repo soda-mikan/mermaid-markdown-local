@@ -47,7 +47,7 @@
         <section class="appearance-settings" aria-labelledby="appearanceTitle">
           <div class="settings-intro">
             <h2 id="appearanceTitle">表示・書き出し</h2>
-            <p>選択はこの端末内だけに保存されます。本文フォントとMermaid配色は書き出しにも反映されます。</p>
+            <p>表示設定はこの端末内だけに保存されます。Wordテンプレートは保存せず、開いている間だけ使用します。</p>
           </div>
           <div class="settings-controls">
             <label class="setting-control" for="fontSelect">
@@ -68,6 +68,15 @@
                 <option value="paper">紙面</option>
               </select>
             </label>
+            <label class="setting-control" for="textSizeSelect">
+              <span>文字サイズ</span>
+              <select id="textSizeSelect">
+                <option value="small">小</option>
+                <option value="standard">標準</option>
+                <option value="large">大</option>
+                <option value="xlarge">特大</option>
+              </select>
+            </label>
             <label class="setting-control" for="mermaidPaletteSelect">
               <span>Mermaid配色</span>
               <select id="mermaidPaletteSelect">
@@ -78,6 +87,15 @@
                 <option value="monochrome">モノクロ</option>
               </select>
             </label>
+            <div class="setting-control word-template-control">
+              <span>Wordテンプレート（任意）</span>
+              <div class="word-template-actions">
+                <button type="button" id="wordTemplateButton">選択</button>
+                <button type="button" id="clearWordTemplateButton" disabled>解除</button>
+              </div>
+              <span class="word-template-status" id="wordTemplateStatus" aria-live="polite">未選択</span>
+              <input id="wordTemplateInput" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+            </div>
             <button type="button" id="resetAppearanceButton">初期設定に戻す</button>
           </div>
         </section>
@@ -131,7 +149,7 @@ PowerPointのスライド区切り。
 Ctrl/⌘ + O  開く
 Ctrl/⌘ + S  保存
 F1          ヘルプ</pre>
-          <p>「Viewerのみ」でプレビューを全幅表示できます。WordとPowerPointでは本文を編集でき、Mermaid図は鮮明なSVGとして埋め込みます。</p>
+          <p>「Viewerのみ」でプレビューを全幅表示できます。Wordテンプレートは、単独の段落に <code>{{CONTENT}}</code> を置いた `.docx` を選択してください。WordとPowerPointでは本文を編集でき、Mermaid図は鮮明なSVGとして埋め込みます。</p>
         </section>
       </div>
     </section>

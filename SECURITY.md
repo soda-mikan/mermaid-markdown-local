@@ -17,6 +17,8 @@ welcome.
 - External links are not opened by the preview.
 - External images are blocked; embedded `data:` images are allowed.
 - Preferences are stored only in browser local storage.
+- Word templates stay in browser memory and are not persisted by the app.
+- Macro-enabled and automatically linked external Word template resources are rejected.
 - Exported files contain the document content by design.
-- Opening a GitHub Pages demo still makes a normal page request to GitHub. For
-  strict offline use, download the release HTML and open it locally.
+- Downloading from GitHub requires a normal request to GitHub. For strict
+  offline use, download the release HTML and open it locally.
